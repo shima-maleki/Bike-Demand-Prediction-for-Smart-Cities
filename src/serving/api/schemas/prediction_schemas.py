@@ -3,7 +3,7 @@ Pydantic Schemas for Prediction API
 Request and response models for all prediction endpoints
 """
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
@@ -28,8 +28,8 @@ class PredictionRequest(BaseModel):
     timestamp: Optional[datetime] = Field(None, description="Prediction timestamp (default: now + 1h)")
     weather_data: Optional[WeatherData] = Field(None, description="Optional weather data")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "station_id": "station_1",
                 "timestamp": "2025-01-15T14:00:00",
@@ -41,6 +41,7 @@ class PredictionRequest(BaseModel):
                 }
             }
         }
+    )
 
 
 class BatchPredictionRequest(BaseModel):
@@ -54,8 +55,8 @@ class BatchPredictionRequest(BaseModel):
             raise ValueError("Maximum 100 predictions per batch")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "predictions": [
                     {
@@ -69,6 +70,7 @@ class BatchPredictionRequest(BaseModel):
                 ]
             }
         }
+    )
 
 
 class ForecastRequest(BaseModel):
@@ -84,14 +86,15 @@ class ForecastRequest(BaseModel):
             raise ValueError("Maximum forecast horizon is 168 hours (7 days)")
         return v
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "station_id": "station_1",
                 "hours_ahead": 24,
                 "start_time": "2025-01-15T12:00:00"
             }
         }
+    )
 
 
 # Response Schemas
@@ -121,8 +124,8 @@ class PredictionResponse(BaseModel):
     model_info: Optional[ModelInfo] = Field(None, description="Model metadata")
     prediction_made_at: str = Field(..., description="When prediction was made")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "station_id": "station_1",
                 "timestamp": "2025-01-15T14:00:00",
@@ -140,6 +143,7 @@ class PredictionResponse(BaseModel):
                 "prediction_made_at": "2025-01-15T13:00:00"
             }
         }
+    )
 
 
 class BatchPredictionResponse(BaseModel):
@@ -149,8 +153,8 @@ class BatchPredictionResponse(BaseModel):
     successful: int = Field(..., description="Number of successful predictions")
     failed: int = Field(..., description="Number of failed predictions")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "predictions": [
                     {
@@ -169,6 +173,7 @@ class BatchPredictionResponse(BaseModel):
                 "failed": 0
             }
         }
+    )
 
 
 class HourlyForecast(BaseModel):
@@ -188,8 +193,8 @@ class ForecastResponse(BaseModel):
     model_info: Optional[ModelInfo] = Field(None, description="Model metadata")
     forecast_made_at: str = Field(..., description="When forecast was made")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "station_id": "station_1",
                 "forecast_start": "2025-01-15T12:00:00",
@@ -213,6 +218,7 @@ class ForecastResponse(BaseModel):
                 "forecast_made_at": "2025-01-15T12:00:00"
             }
         }
+    )
 
 
 # Error Response
@@ -223,11 +229,12 @@ class ErrorResponse(BaseModel):
     detail: Optional[str] = Field(None, description="Detailed error information")
     timestamp: str = Field(..., description="Error timestamp")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "error": "Prediction failed",
                 "detail": "Station not found",
                 "timestamp": "2025-01-15T12:00:00"
             }
         }
+    )

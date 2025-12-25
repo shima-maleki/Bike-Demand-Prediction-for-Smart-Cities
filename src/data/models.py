@@ -176,7 +176,7 @@ class ModelPerformance(Base):
     r2_score = Column(DECIMAL(8, 4))
     data_drift_score = Column(DECIMAL(8, 4))
     prediction_drift_score = Column(DECIMAL(8, 4))
-    metadata = Column(JSONB)
+    model_metadata = Column("metadata", JSONB)  # Renamed to avoid SQLAlchemy reserved keyword
     created_at = Column(DateTime, default=datetime.utcnow)
 
     # Indexes
