@@ -10,6 +10,18 @@ Get the complete Bike Demand Prediction system running in 10 minutes.
 - 8GB RAM minimum
 - Ports available: 5000, 5432, 8000, 8080, 8501
 
+## 💡 Quick Tip: Docker Compose Shortcut
+
+To avoid typing `-f infrastructure/docker-compose.yml` every time, create a symlink:
+
+```bash
+ln -s infrastructure/docker-compose.yml docker-compose.yml
+```
+
+Then you can use shorter commands like `docker-compose up -d postgres mlflow`.
+
+This guide shows the full `-f` flag commands for clarity.
+
 ## 🚀 Step-by-Step Setup
 
 ### 1. Clone the Repository
@@ -53,13 +65,13 @@ Get free API key: https://openweathermap.org/api
 
 ```bash
 # Start PostgreSQL and MLflow
-docker-compose up -d postgres mlflow
+docker-compose -f infrastructure/docker-compose.yml up -d postgres mlflow
 
 # Wait for services to be ready (30 seconds)
 sleep 30
 
 # Verify PostgreSQL is running
-docker-compose ps
+docker-compose -f infrastructure/docker-compose.yml ps
 ```
 
 ### 5. Initialize Database
@@ -69,7 +81,7 @@ docker-compose ps
 psql $DATABASE_URL -f infrastructure/postgres/schema.sql
 
 # Or using docker exec
-docker-compose exec postgres psql -U postgres -d bike_demand -f /docker-entrypoint-initdb.d/schema.sql
+docker-compose -f infrastructure/docker-compose.yml exec postgres psql -U postgres -d bike_demand -f /docker-entrypoint-initdb.d/02-schema.sql
 ```
 
 ### 6. Collect Initial Data
@@ -181,8 +193,8 @@ For automated pipelines:
 
 ```bash
 # Start Airflow services
-docker-compose up -d airflow-init
-docker-compose up -d airflow-webserver airflow-scheduler
+docker-compose -f infrastructure/docker-compose.yml up -d airflow-init
+docker-compose -f infrastructure/docker-compose.yml up -d airflow-webserver airflow-scheduler
 
 # Access Airflow UI
 # http://localhost:8080
@@ -202,16 +214,16 @@ To run everything in Docker:
 
 ```bash
 # Build all images
-docker-compose build
+docker-compose -f infrastructure/docker-compose.yml build
 
 # Start all services
-docker-compose up -d
+docker-compose -f infrastructure/docker-compose.yml up -d
 
 # Check status
-docker-compose ps
+docker-compose -f infrastructure/docker-compose.yml ps
 
 # View logs
-docker-compose logs -f api dashboard
+docker-compose -f infrastructure/docker-compose.yml logs -f api dashboard
 ```
 
 Services will be available at:
@@ -291,13 +303,13 @@ mlflow models get-model --name bike-demand-forecasting --version latest
 
 ```bash
 # Check PostgreSQL is running
-docker-compose ps postgres
+docker-compose -f infrastructure/docker-compose.yml ps postgres
 
 # Restart if needed
-docker-compose restart postgres
+docker-compose -f infrastructure/docker-compose.yml restart postgres
 
 # Check logs
-docker-compose logs postgres
+docker-compose -f infrastructure/docker-compose.yml logs postgres
 ```
 
 ### API Not Starting
