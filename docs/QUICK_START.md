@@ -74,14 +74,26 @@ sleep 30
 docker-compose -f infrastructure/docker-compose.yml ps
 ```
 
-### 5. Initialize Database
+### 5. Verify Database Initialization
+
+The database schema is automatically created when PostgreSQL starts.
 
 ```bash
-# Create database schema
-psql $DATABASE_URL -f infrastructure/postgres/schema.sql
+# Verify tables exist
+docker-compose -f infrastructure/docker-compose.yml exec postgres psql -U postgres -d bike_demand_db -c "\dt"
+
+# You should see 8 tables:
+# - bike_stations, bike_station_status, weather_data, features
+# - predictions, model_performance, data_quality_checks, api_logs
+```
+
+**Note**: If you need to manually reinitialize the schema:
+```bash
+# Using local psql (update DATABASE_URL in .env to: postgresql://postgres:postgres@localhost:5432/bike_demand_db)
+psql postgresql://postgres:postgres@localhost:5432/bike_demand_db -f infrastructure/postgres/schema.sql
 
 # Or using docker exec
-docker-compose -f infrastructure/docker-compose.yml exec postgres psql -U postgres -d bike_demand -f /docker-entrypoint-initdb.d/02-schema.sql
+docker-compose -f infrastructure/docker-compose.yml exec postgres psql -U postgres -d bike_demand_db -f /docker-entrypoint-initdb.d/02-schema.sql
 ```
 
 ### 6. Collect Initial Data

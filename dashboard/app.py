@@ -9,9 +9,9 @@ from datetime import datetime
 import sys
 from pathlib import Path
 
-# Add src to path for imports
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
 from src.config.settings import get_settings
 

@@ -208,3 +208,9 @@ __marimo__/
 
 claude.md 
 secrets.toml
+.claude
+data
+mlruns
+notebooks/catboost_info
+collect_and_train.py
+train_model.py

@@ -186,6 +186,23 @@ class Settings(BaseSettings):
     environment: str = Field(default="development", description="Environment name")
     debug: bool = Field(default=False, description="Debug mode")
 
+    @field_validator("debug", mode="before")
+    @classmethod
+    def validate_debug(cls, v):
+        """Convert string debug values to boolean"""
+        if isinstance(v, bool):
+            return v
+        if isinstance(v, str):
+            # If it's a log level string (INFO, WARN, etc), default to False
+            if v.upper() in ["WARN", "WARNING", "INFO", "ERROR", "DEBUG", "CRITICAL"]:
+                return False
+            # Handle boolean strings
+            if v.lower() in ["true", "1", "yes", "on"]:
+                return True
+            if v.lower() in ["false", "0", "no", "off"]:
+                return False
+        return bool(v)
+
     # Project info
     project_name: str = Field(
         default="bike-demand-prediction", description="Project name"

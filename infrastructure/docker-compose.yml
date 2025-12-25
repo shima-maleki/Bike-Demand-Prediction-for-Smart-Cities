@@ -29,7 +29,7 @@ services:
     container_name: bike_demand_mlflow
     command: >
       mlflow server
-      --backend-store-uri postgresql://postgres:postgres@postgres:5432/mlflow_db
+      --backend-store-uri file:///mlflow/backend
       --default-artifact-root /mlflow/artifacts
       --host 0.0.0.0
       --port 5000
@@ -37,9 +37,6 @@ services:
       - "5000:5000"
     volumes:
       - mlflow_data:/mlflow
-    depends_on:
-      postgres:
-        condition: service_healthy
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
     healthcheck:
@@ -73,8 +70,8 @@ services:
   # Airflow Webserver
   airflow-webserver:
     build:
-      context: ../docker/airflow
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/airflow/Dockerfile
     container_name: bike_demand_airflow_webserver
     command: airflow webserver
     ports:
@@ -108,8 +105,8 @@ services:
   # Airflow Scheduler
   airflow-scheduler:
     build:
-      context: ../docker/airflow
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/airflow/Dockerfile
     container_name: bike_demand_airflow_scheduler
     command: airflow scheduler
     environment:
@@ -135,8 +132,8 @@ services:
   # Airflow Initialization
   airflow-init:
     build:
-      context: ../docker/airflow
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: docker/airflow/Dockerfile
     container_name: bike_demand_airflow_init
     entrypoint: /bin/bash
     command:

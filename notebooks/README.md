@@ -84,30 +84,56 @@ data/
 │   └── weather_*.csv
 ├── processed/              # Processed features
 │   └── features_*.csv
+├── eda_results/            # EDA outputs
+│   ├── active_stations_snapshot.csv
+│   ├── summary_statistics.csv
+│   ├── weather_snapshot.csv
+│   ├── top_10_busiest_stations.csv
+│   ├── top_10_least_busy_stations.csv
+│   └── top_10_largest_stations.csv
 └── *.png                   # Visualizations
 
 models/
-├── xgboost_*.json         # XGBoost model
-├── lightgbm_*.txt         # LightGBM model
-└── catboost_*.cbm         # CatBoost model
+├── xgboost_*.pkl          # XGBoost model (pickle)
+├── lightgbm_*.pkl         # LightGBM model (pickle)
+└── catboost_*.pkl         # CatBoost model (pickle)
+
+mlruns/                     # MLflow experiment tracking
+└── [experiment_id]/
+    └── [run_id]/
+        ├── metrics/
+        ├── params/
+        └── artifacts/
 ```
 
 ## Quick Start
 
-Open `00_end_to_end_system_demo.ipynb` and run all cells:
+### For First-Time Users (Recommended Workflow)
 
+**Step 1: Run EDA Notebook** (Understand your data first)
+```bash
+jupyter notebook notebooks/01_exploratory_data_analysis.ipynb
+```
+- Understand data patterns and quality
+- Identify key insights for modeling
+- Export analysis results
+- Runtime: ~5-8 minutes
+
+**Step 2: Run End-to-End Demo** (Train initial models)
 ```bash
 jupyter notebook notebooks/00_end_to_end_system_demo.ipynb
 ```
+- Collect live data from APIs
+- Engineer 100+ features
+- Train 3 models with MLflow tracking
+- Generate predictions and visualizations
+- Runtime: ~10-15 minutes
 
-The notebook is fully self-contained and will:
-- ✅ Collect live data from APIs
-- ✅ Engineer 100+ features
-- ✅ Train 3 models with MLflow tracking
-- ✅ Generate predictions and visualizations
-- ✅ Save everything to appropriate folders
-
-Expected runtime: ~10-15 minutes
+**Step 3: Enable Production System**
+- Enable Airflow DAGs at http://localhost:8080
+- Monitor experiments at http://localhost:5000
+- Test API at http://localhost:8000/docs
+- View dashboard at http://localhost:8501
 
 ## Next Steps
 
@@ -148,11 +174,64 @@ uv sync
 
 ## Additional Notebooks
 
+### 01_exploratory_data_analysis.ipynb
+**Comprehensive exploratory data analysis**
+
+This notebook provides in-depth analysis of bike demand patterns:
+
+1. **Data Collection & Preparation**
+   - Live data from Citi Bike API
+   - Weather data from OpenWeatherMap
+   - Data quality assessment
+
+2. **Statistical Analysis**
+   - Distribution analysis (bikes, docks, utilization)
+   - Normality tests (Shapiro-Wilk)
+   - Q-Q plots for assessment
+   - Outlier detection using IQR method
+
+3. **Geographic Analysis**
+   - Interactive maps with Plotly
+   - Station density visualization
+   - Utilization heatmaps
+   - Regional demand patterns
+
+4. **Demand Patterns**
+   - Station status categorization (Empty, Full, High/Low Demand, Balanced)
+   - Top 10 busiest/least busy stations
+   - Largest capacity stations
+   - Capacity vs utilization correlation
+
+5. **Weather Impact Analysis**
+   - Current weather conditions
+   - Interactive weather gauges
+   - Weather-demand relationships
+
+6. **Data Quality Report**
+   - Missing value analysis
+   - Duplicate detection
+   - Anomaly identification
+   - Data consistency checks
+
+7. **Key Insights & Recommendations**
+   - Feature engineering suggestions
+   - Modeling recommendations
+   - Operational insights
+   - Export results to CSV
+
+**Run time:** ~5-8 minutes
+
+```bash
+jupyter notebook notebooks/01_exploratory_data_analysis.ipynb
+```
+
+### Future Notebooks
+
 You can create more notebooks for specific tasks:
-- `01_eda.ipynb` - Exploratory data analysis
 - `02_feature_selection.ipynb` - Feature engineering experiments
 - `03_model_comparison.ipynb` - Advanced model comparisons
 - `04_hyperparameter_tuning.ipynb` - Optuna optimization
+- `05_time_series_analysis.ipynb` - Temporal patterns deep dive
 
 ---
 
