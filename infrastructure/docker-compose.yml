@@ -84,6 +84,7 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql://postgres:postgres@postgres:5432/bike_demand_db
+      PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     volumes:
       - ../airflow/dags:/opt/airflow/dags
       - ../airflow/plugins:/opt/airflow/plugins
@@ -116,6 +117,7 @@ services:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql://postgres:postgres@postgres:5432/bike_demand_db
+      PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     volumes:
       - ../airflow/dags:/opt/airflow/dags
       - ../airflow/plugins:/opt/airflow/plugins
@@ -152,6 +154,7 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow_db
       AIRFLOW__CORE__FERNET_KEY: 'your_fernet_key_here_replace_in_production'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     depends_on:
       airflow-postgres:
         condition: service_healthy

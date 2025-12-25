@@ -5,7 +5,7 @@ SQLAlchemy database session and connection handling
 
 from typing import Generator
 from contextlib import contextmanager
-from sqlalchemy import create_engine, event, pool
+from sqlalchemy import create_engine, event, pool, text
 from sqlalchemy.orm import sessionmaker, Session, declarative_base
 from sqlalchemy.pool import QueuePool
 from loguru import logger
@@ -114,7 +114,7 @@ def check_db_connection() -> bool:
     """
     try:
         with engine.connect() as connection:
-            connection.execute("SELECT 1")
+            connection.execute(text("SELECT 1"))
         logger.debug("Database connection health check passed")
         return True
     except Exception as e:

@@ -31,7 +31,9 @@ RUN pip install --no-cache-dir --upgrade pip && \
     loguru>=0.7.2 \
     great-expectations>=0.18.0 \
     pydantic>=2.5.0 \
-    pydantic-settings>=2.1.0
+    pydantic-settings>=2.1.0 \
+    holidays>=0.38 \
+    catboost>=1.2.0
 
 # Set working directory
 WORKDIR /opt/airflow
