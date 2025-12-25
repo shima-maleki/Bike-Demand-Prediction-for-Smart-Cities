@@ -139,50 +139,72 @@ bike-demand-prediction/
 - Git
 - OpenWeatherMap API key ([Get free key](https://openweathermap.org/api))
 
-### Installation
+### 10-Minute Quick Start
+
+**Comprehensive guide**: See [docs/QUICK_START.md](docs/QUICK_START.md) for detailed setup instructions.
 
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/yourusername/bike-demand-prediction.git
-cd bike-demand-prediction
+git clone https://github.com/shima-maleki/Bike-Demand-Prediction-for-Smart-Cities.git
+cd Bike-Demand-Prediction-for-Smart-Cities
 ```
 
-2. **Create environment file**
+2. **Install dependencies**
+
+```bash
+# Using uv (recommended)
+uv sync
+
+# Or using pip
+pip install -e .
+```
+
+3. **Configure environment**
 
 ```bash
 cp .env.example .env
+# Edit .env and add your OpenWeatherMap API key
 ```
 
-Edit `.env` and add your OpenWeatherMap API key:
-```
-WEATHER_API_KEY=your_api_key_here
-```
-
-3. **Start services with Docker Compose**
+4. **Start infrastructure**
 
 ```bash
-cd infrastructure
-docker-compose up -d
+docker-compose up -d postgres mlflow
 ```
 
-This will start:
-- PostgreSQL (port 5432)
-- MLflow (port 5000)
-- Airflow (port 8080)
-- FastAPI (port 8000)
-- Streamlit (port 8501)
-- Prometheus (port 9090)
-- Grafana (port 3000)
+5. **Initialize database**
 
-4. **Access the services**
+```bash
+psql $DATABASE_URL -f infrastructure/postgres/schema.sql
+```
 
-- **Airflow UI**: http://localhost:8080 (admin/admin)
-- **MLflow UI**: http://localhost:5000
-- **FastAPI Docs**: http://localhost:8000/docs
+6. **Collect data & train model**
+
+```bash
+python scripts/test_data_collection.py
+python scripts/test_features.py
+python scripts/test_full_pipeline.py
+```
+
+7. **Start API server**
+
+```bash
+python src/serving/api/main.py
+```
+
+8. **Start dashboard**
+
+```bash
+streamlit run dashboard/app.py
+```
+
+### Access Services
+
+- **API Documentation**: http://localhost:8000/docs
 - **Streamlit Dashboard**: http://localhost:8501
-- **Grafana**: http://localhost:3000 (admin/admin)
-- **Prometheus**: http://localhost:9090
+- **MLflow UI**: http://localhost:5000
+- **Database**: postgresql://postgres:postgres@localhost:5432/bike_demand
 
 ### Local Development Setup
 
@@ -404,7 +426,24 @@ docker-compose -f infrastructure/docker-compose.yml down
 
 ### Production Deployment
 
-For cloud deployment (AWS/GCP/Azure), see [deployment guide](docs/deployment.md).
+**Full deployment guide**: See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for comprehensive deployment instructions.
+
+**Quick production start**:
+
+```bash
+# Use production Docker Compose
+docker-compose -f docker-compose.prod.yml up -d
+
+# All services with health checks, resource limits, and monitoring
+```
+
+Deployment options:
+- **Docker Compose**: For small-scale deployments
+- **Kubernetes**: For large-scale, high availability
+- **Cloud Platforms**: AWS ECS/EKS, GCP Cloud Run, Azure Container Instances
+- **CI/CD**: Automated deployment with GitHub Actions
+
+See deployment guide for AWS, GCP, Azure, Kubernetes, and security best practices.
 
 ## CI/CD Pipeline
 
@@ -422,15 +461,29 @@ GitHub Actions workflows:
    - Runs on: weekly schedule
    - Steps: trigger Airflow DAG → validate model → promote to staging
 
-## Project Roadmap
+## Project Status
+
+✅ **Production Ready** - All major components implemented and tested
+
+### Completed Phases
 
 - [x] Phase 1: Foundation & Infrastructure
 - [x] Phase 2: Data Collection & Storage
-- [ ] Phase 3: Feature Engineering
-- [ ] Phase 4: Model Development
-- [ ] Phase 5: Model Serving
-- [ ] Phase 6: Monitoring & Dashboard
-- [ ] Phase 7: CI/CD & Testing
+- [x] Phase 3: Feature Engineering (100+ features)
+- [x] Phase 4: Model Development (XGBoost, LightGBM, CatBoost)
+- [x] Phase 5: Model Serving (FastAPI with 10 endpoints)
+- [x] Phase 6: Monitoring & Dashboard (Streamlit with 4 pages)
+- [x] Phase 7: CI/CD & Testing (GitHub Actions + Unit tests)
+
+### Project Metrics
+
+- **Lines of Code**: ~15,000+
+- **API Endpoints**: 10
+- **Features Engineered**: 100+
+- **Test Coverage**: Unit tests for features and API
+- **Docker Services**: 9 (PostgreSQL, MLflow, API, Dashboard, Airflow, Prometheus, Grafana)
+- **Airflow DAGs**: 4 (data ingestion, weather, features, training)
+- **Dashboard Pages**: 4 (forecast, performance, quality, health)
 
 ## Contributing
 
