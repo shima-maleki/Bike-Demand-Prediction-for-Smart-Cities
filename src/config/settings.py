@@ -61,8 +61,11 @@ class WeatherAPISettings(BaseSettings):
     @field_validator("api_key")
     @classmethod
     def validate_api_key(cls, v: str) -> str:
-        if not v:
-            raise ValueError("OpenWeatherMap API key is required")
+        import os
+        # Only require API key in production environment
+        environment = os.getenv("ENVIRONMENT", "development")
+        if not v and environment == "production":
+            raise ValueError("OpenWeatherMap API key is required in production")
         return v
 
     model_config = SettingsConfigDict(env_prefix="WEATHER_", case_sensitive=False)
