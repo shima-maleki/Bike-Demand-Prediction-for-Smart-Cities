@@ -17,7 +17,7 @@ from src.features.holiday_features import HolidayFeatureGenerator
 @pytest.fixture
 def sample_bike_data():
     """Create sample bike data for testing"""
-    dates = pd.date_range(start="2024-01-01", periods=100, freq="H")
+    dates = pd.date_range(start="2024-01-01", periods=100, freq="h")
 
     df = pd.DataFrame({
         "station_id": "station_1",
@@ -32,7 +32,7 @@ def sample_bike_data():
 @pytest.fixture
 def sample_weather_data():
     """Create sample weather data for testing"""
-    dates = pd.date_range(start="2024-01-01", periods=100, freq="H")
+    dates = pd.date_range(start="2024-01-01", periods=100, freq="h")
 
     df = pd.DataFrame({
         "timestamp": dates,
