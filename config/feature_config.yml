@@ -1,0 +1,119 @@
+# Feature Engineering Configuration
+# Defines all features to be generated for bike demand forecasting
+
+feature_version: "v1.0"
+
+# Temporal Features
+temporal_features:
+  enabled: true
+  features:
+    - hour_of_day          # 0-23
+    - day_of_week          # 0-6 (Monday=0)
+    - day_of_month         # 1-31
+    - month                # 1-12
+    - quarter              # 1-4
+    - is_weekend           # Boolean
+    - is_weekday           # Boolean
+    - season               # spring, summer, fall, winter
+    - part_of_day          # night, morning, afternoon, evening
+    - is_rush_hour         # Boolean (7-9 AM, 5-8 PM)
+
+# Lag Features
+lag_features:
+  enabled: true
+  lag_hours:
+    - 1      # 1 hour ago
+    - 3      # 3 hours ago
+    - 6      # 6 hours ago
+    - 12     # 12 hours ago
+    - 24     # 1 day ago
+    - 48     # 2 days ago
+    - 168    # 1 week ago
+  target_column: "bikes_available"
+
+# Rolling Window Features
+rolling_features:
+  enabled: true
+  windows:
+    - 3      # 3-hour window
+    - 6      # 6-hour window
+    - 12     # 12-hour window
+    - 24     # 24-hour window
+    - 72     # 3-day window
+  statistics:
+    - mean
+    - std
+    - min
+    - max
+    - median
+  target_column: "bikes_available"
+
+# Weather Features
+weather_features:
+  enabled: true
+  features:
+    - temperature_normalized    # Normalized temperature
+    - feels_like_normalized     # Normalized feels-like temperature
+    - humidity_category         # low, medium, high
+    - wind_category             # calm, breezy, windy, strong
+    - is_rainy                  # Boolean
+    - is_snowy                  # Boolean
+    - is_clear                  # Boolean
+    - weather_severity          # 1-5 scale
+
+# Holiday Features
+holiday_features:
+  enabled: true
+  country: "US"
+  features:
+    - is_holiday               # Boolean
+    - is_holiday_eve           # Day before holiday
+    - is_holiday_after         # Day after holiday
+    - days_to_next_holiday     # Integer
+    - days_from_last_holiday   # Integer
+    - holiday_name             # String (if holiday)
+
+# Interaction Features
+interaction_features:
+  enabled: true
+  interactions:
+    - [hour_of_day, is_weekend]
+    - [temperature_normalized, is_rainy]
+    - [is_rush_hour, day_of_week]
+
+# Cyclic Features (for periodic patterns)
+cyclic_features:
+  enabled: true
+  features:
+    - hour_sin                 # sin(2π * hour / 24)
+    - hour_cos                 # cos(2π * hour / 24)
+    - day_sin                  # sin(2π * day / 7)
+    - day_cos                  # cos(2π * day / 7)
+    - month_sin                # sin(2π * month / 12)
+    - month_cos                # cos(2π * month / 12)
+
+# Station-specific Features
+station_features:
+  enabled: true
+  features:
+    - capacity_ratio           # bikes_available / capacity
+    - utilization_rate         # 1 - capacity_ratio
+    - station_popularity       # Average bikes per hour
+    - turnover_rate            # Change frequency
+
+# Feature Selection
+feature_selection:
+  enabled: false
+  method: "mutual_info"        # mutual_info, correlation, lasso
+  n_features: 50               # Keep top N features
+
+# Feature Scaling
+feature_scaling:
+  enabled: true
+  method: "standard"           # standard, minmax, robust
+  exclude_features:
+    - is_weekend
+    - is_holiday
+    - is_rainy
+    - season
+    - weather_condition
