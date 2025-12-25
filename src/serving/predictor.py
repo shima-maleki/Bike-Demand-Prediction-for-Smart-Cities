@@ -15,7 +15,7 @@ from src.features.weather_features import WeatherFeatureGenerator
 from src.features.lag_features import LagFeatureGenerator
 from src.features.rolling_features import RollingFeatureGenerator
 from src.features.holiday_features import HolidayFeatureGenerator
-from src.data.storage.postgres_handler import PostgresHandler
+from src.data.storage.postgres_handler import PostgreSQLHandler
 
 
 class BikeDedemandPredictor:
@@ -24,7 +24,7 @@ class BikeDedemandPredictor:
     def __init__(self):
         """Initialize predictor"""
         self.model_loader = get_model_loader()
-        self.postgres = PostgresHandler()
+        self.postgres = PostgreSQLHandler()
 
         # Initialize feature generators
         self.temporal_gen = TemporalFeatureGenerator()

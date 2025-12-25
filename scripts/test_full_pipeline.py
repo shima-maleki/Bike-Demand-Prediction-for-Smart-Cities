@@ -16,7 +16,7 @@ sys.path.insert(0, str(src_path))
 from loguru import logger
 from src.data.collectors.citi_bike_collector import CitiBikeCollector
 from src.data.collectors.weather_collector import WeatherCollector
-from src.data.storage.postgres_handler import PostgresHandler
+from src.data.storage.postgres_handler import PostgreSQLHandler
 from src.features.temporal_features import TemporalFeatureGenerator
 from src.features.lag_features import LagFeatureGenerator
 from src.features.rolling_features import RollingFeatureGenerator
@@ -78,7 +78,7 @@ def test_database_storage():
             weather = weather_collector.collect_current_weather()
 
         logger.info("\n[2/3] Storing in PostgreSQL...")
-        postgres = PostgresHandler()
+        postgres = PostgreSQLHandler()
 
         # Store stations
         postgres.upsert_stations(stations)
