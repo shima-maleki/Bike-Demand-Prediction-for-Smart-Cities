@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from typing import Dict, Any, List, Optional
 from datetime import datetime
 from loguru import logger
+from sqlalchemy import text
 
 from src.serving.model_loader import get_model_loader
 
@@ -151,7 +152,7 @@ async def prometheus_metrics() -> Response:
             from src.config.database import get_db_context
 
             with get_db_context() as db:
-                result = db.execute("SELECT 1").scalar()
+                result = db.execute(text("SELECT 1")).scalar()
                 db_connected = 1 if result == 1 else 0
 
         except Exception:

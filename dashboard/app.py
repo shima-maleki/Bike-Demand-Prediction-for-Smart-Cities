@@ -8,6 +8,7 @@ import requests
 from datetime import datetime
 import sys
 from pathlib import Path
+import os
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent
@@ -71,7 +72,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", st.secrets.get("API_URL", "http://localhost:8000"))
 
 
 def check_api_health():

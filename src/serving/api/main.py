@@ -10,6 +10,7 @@ from fastapi.middleware.gzip import GZipMiddleware
 from datetime import datetime
 from loguru import logger
 import time
+from sqlalchemy import text
 
 from src.serving.api.routers import predictions, health, monitoring
 from src.config.settings import get_settings
@@ -199,7 +200,7 @@ async def startup_event():
         from src.config.database import get_db_context
 
         with get_db_context() as db:
-            result = db.execute("SELECT 1").scalar()
+            result = db.execute(text("SELECT 1")).scalar()
             if result == 1:
                 logger.info("✓ Database connection successful")
             else:
