@@ -554,8 +554,8 @@ docker exec bike_demand_postgres pg_isready
 
 ## Documentation
 
-- **[Architecture Guide](docs/ARCHITECTURE.md:1)** - Detailed system architecture, pipelines, and design decisions
-- **[Production Setup](docs/START_PRODUCTION.md:1)** - Complete production deployment guide
+- **[Architecture Guide](docs/ARCHITECTURE.md)** - Detailed system architecture, pipelines, and design decisions
+- **[Production Setup](docs/START_PRODUCTION.md)** - Complete production deployment guide
 
 ## Project Metrics
 
