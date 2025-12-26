@@ -268,6 +268,7 @@ with DAG(
     end = EmptyOperator(task_id="end")
 
     # Define task dependencies
-    start >> [task_collect_station_info, task_collect_station_status]
-    [task_collect_station_info, task_collect_station_status] >> task_validate_quality
+    # Station information must be collected first (creates FK relationship)
+    start >> task_collect_station_info >> task_collect_station_status
+    task_collect_station_status >> task_validate_quality
     task_validate_quality >> task_log_metrics >> end

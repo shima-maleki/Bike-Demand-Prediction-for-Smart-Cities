@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Model Training Container
+  model-trainer:
+    build:
+      context: .
+      dockerfile: docker/training/Dockerfile
+    container_name: bike_demand_trainer
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      PYTHONPATH: /app
+    networks:
+      - infrastructure_bike_demand_network
+    depends_on:
+      - mlflow
+    volumes:
+      - ./src:/app/src
+      - ./scripts:/app/scripts
+
+networks:
+  infrastructure_bike_demand_network:
+    external: true

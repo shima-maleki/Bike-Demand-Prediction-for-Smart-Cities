@@ -80,6 +80,11 @@ class BikeDedemandPredictor:
             confidence_lower = max(0, prediction - 1.96 * std_error)
             confidence_upper = prediction + 1.96 * std_error
 
+            # Get model info and ensure version is a string
+            model_info = self.model_loader.get_model_info()
+            if model_info and "version" in model_info:
+                model_info["version"] = str(model_info["version"])
+
             result = {
                 "station_id": station_id,
                 "timestamp": timestamp.isoformat(),
@@ -89,7 +94,7 @@ class BikeDedemandPredictor:
                     "upper": float(confidence_upper),
                     "confidence_level": 0.95
                 },
-                "model_info": self.model_loader.get_model_info(),
+                "model_info": model_info,
                 "prediction_made_at": datetime.utcnow().isoformat()
             }
 
@@ -203,14 +208,44 @@ class BikeDedemandPredictor:
         """
         Prepare features for prediction
 
+        NOTE: This is a simplified version for the demo model.
+        For production, use the full feature engineering pipeline.
+
         Args:
             station_id: Station ID
             timestamp: Prediction timestamp
             weather_data: Optional weather data
 
         Returns:
-            DataFrame with features
+            DataFrame with features matching the model's training features
         """
+        # Check what features the model expects
+        model = self.model_loader.get_model()
+        if model is None:
+            raise ValueError("No model loaded")
+
+        # Try to get feature names from the model
+        try:
+            model_features = model.feature_names_in_
+            logger.info(f"Model expects features: {list(model_features)}")
+            use_simple_features = len(model_features) < 10
+        except AttributeError:
+            # Model doesn't have feature_names_in_, assume simple features
+            use_simple_features = True
+            logger.warning("Model doesn't expose feature names, using simple features")
+
+        if use_simple_features:
+            # Simple features for demo model (hour, day_of_week, temperature, humidity)
+            df = pd.DataFrame({
+                "hour": [timestamp.hour],
+                "day_of_week": [timestamp.weekday()],
+                "temperature": [weather_data.get("temperature", 20.0) if weather_data else 20.0],
+                "humidity": [weather_data.get("humidity", 60.0) if weather_data else 60.0]
+            })
+            logger.info("Using simple feature set for demo model")
+            return df
+
+        # Full feature engineering for production model
         # Create base dataframe
         df = pd.DataFrame({
             "station_id": [station_id],
@@ -270,6 +305,13 @@ class BikeDedemandPredictor:
         # Remove non-feature columns
         non_feature_cols = ["station_id", "timestamp", "date", "holiday_name"]
         df = df.drop(columns=[c for c in non_feature_cols if c in df.columns])
+
+        # Ensure feature order matches model
+        try:
+            df = df[model_features]
+        except KeyError as e:
+            logger.error(f"Missing features: {e}")
+            raise ValueError(f"Required features not available: {e}")
 
         return df
 

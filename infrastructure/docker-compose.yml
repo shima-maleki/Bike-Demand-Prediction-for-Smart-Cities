@@ -30,20 +30,25 @@ services:
     command: >
       mlflow server
       --backend-store-uri file:///mlflow/backend
-      --default-artifact-root /mlflow/artifacts
+      --default-artifact-root file:///mlflow/artifacts
       --host 0.0.0.0
       --port 5000
+      --serve-artifacts
+      --gunicorn-opts "--timeout=300"
     ports:
       - "5000:5000"
     volumes:
       - mlflow_data:/mlflow
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
+      GUNICORN_CMD_ARGS: "--timeout 300"
+      MLFLOW_ARTIFACTS_DESTINATION: file:///mlflow/artifacts
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - bike_demand_network
 
@@ -84,6 +89,12 @@ services:
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW__API__AUTH_BACKENDS: 'airflow.api.auth.backend.basic_auth'
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql://postgres:postgres@postgres:5432/bike_demand_db
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: bike_demand_db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
       PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     volumes:
       - ../airflow/dags:/opt/airflow/dags
@@ -117,6 +128,13 @@ services:
       AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
       AIRFLOW_CONN_POSTGRES_DEFAULT: postgresql://postgres:postgres@postgres:5432/bike_demand_db
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: bike_demand_db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-f57895b988e11368c6b38a3cb983b6ec}
       PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     volumes:
       - ../airflow/dags:/opt/airflow/dags
@@ -154,6 +172,13 @@ services:
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres:5432/airflow_db
       AIRFLOW__CORE__FERNET_KEY: 'your_fernet_key_here_replace_in_production'
       AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: bike_demand_db
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      WEATHER_API_KEY: ${WEATHER_API_KEY:-f57895b988e11368c6b38a3cb983b6ec}
       PYTHONPATH: '/opt/airflow:/opt/airflow/src'
     depends_on:
       airflow-postgres:

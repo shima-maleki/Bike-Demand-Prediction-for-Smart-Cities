@@ -133,10 +133,11 @@ async def detailed_health_check() -> DetailedHealthResponse:
     # Check database
     try:
         from src.config.database import get_db_context
+        from sqlalchemy import text
 
         with get_db_context() as db:
             # Try a simple query
-            result = db.execute("SELECT 1").scalar()
+            result = db.execute(text("SELECT 1")).scalar()
             components["database"] = {
                 "status": "healthy" if result == 1 else "degraded",
                 "connected": True

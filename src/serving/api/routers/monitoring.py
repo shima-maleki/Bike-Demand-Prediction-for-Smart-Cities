@@ -58,9 +58,14 @@ async def get_current_model() -> CurrentModelResponse:
         # Convert metrics dict to ModelMetrics if available
         metrics_obj = None
         if model_metrics:
+            model_version = model_info.get("version") if model_info else None
+            # Convert version to string if it's an integer
+            if model_version is not None and not isinstance(model_version, str):
+                model_version = str(model_version)
+
             metrics_obj = ModelMetrics(
                 model_name=model_info.get("name") if model_info else None,
-                model_version=model_info.get("version") if model_info else None,
+                model_version=model_version,
                 **model_metrics
             )
 
