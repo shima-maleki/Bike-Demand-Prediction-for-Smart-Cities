@@ -28,12 +28,16 @@ RUN pip install --no-cache-dir --upgrade pip && \
     python-dotenv>=1.0.0 \
     loguru>=0.7.2 \
     pydantic>=2.5.0 \
-    pydantic-settings>=2.1.0
+    pydantic-settings>=2.1.0 \
+    holidays>=0.38
 
 # Copy application code
 COPY dashboard/ /app/dashboard/
 COPY src/ /app/src/
 COPY config/ /app/config/
+
+# Create mlflow directory and symlink for artifact compatibility
+RUN mkdir -p /mlflow && ln -sf /mlflow/backend /mlflow/artifacts
 
 # Expose port
 EXPOSE 8501

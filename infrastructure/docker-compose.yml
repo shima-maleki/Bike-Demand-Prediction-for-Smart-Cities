@@ -30,19 +30,19 @@ services:
     command: >
       mlflow server
       --backend-store-uri file:///mlflow/backend
-      --default-artifact-root file:///mlflow/artifacts
+      --default-artifact-root file:///mlflow/backend
       --host 0.0.0.0
       --port 5000
       --serve-artifacts
-      --gunicorn-opts "--timeout=300"
+      --allowed-hosts='*'
+      --uvicorn-opts "--timeout-keep-alive 300"
     ports:
       - "5000:5000"
     volumes:
       - mlflow_data:/mlflow
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
-      GUNICORN_CMD_ARGS: "--timeout 300"
-      MLFLOW_ARTIFACTS_DESTINATION: file:///mlflow/artifacts
+      MLFLOW_ARTIFACTS_DESTINATION: file:///mlflow/backend
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
       interval: 30s
@@ -205,6 +205,7 @@ services:
     volumes:
       - ../src:/app/src
       - ../config:/app/config
+      - mlflow_data:/mlflow
     depends_on:
       postgres:
         condition: service_healthy
@@ -234,12 +235,16 @@ services:
       DB_PASSWORD: postgres
       DB_DATABASE: bike_demand_db
       API_URL: http://api:8000
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     volumes:
       - ../dashboard:/app/dashboard
       - ../src:/app/src
       - ../config:/app/config
+      - mlflow_data:/mlflow
     depends_on:
       postgres:
+        condition: service_healthy
+      mlflow:
         condition: service_healthy
       api:
         condition: service_healthy

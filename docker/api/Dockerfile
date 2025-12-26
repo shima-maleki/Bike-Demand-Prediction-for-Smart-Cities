@@ -34,7 +34,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     prometheus-client>=0.19.0 \
     prometheus-fastapi-instrumentator>=6.1.0 \
     slowapi>=0.1.9 \
-    python-multipart>=0.0.6
+    python-multipart>=0.0.6 \
+    holidays>=0.38
 
 # Copy application code
 COPY src/ /app/src/
@@ -42,6 +43,9 @@ COPY config/ /app/config/
 
 # Create logs directory
 RUN mkdir -p /app/logs
+
+# Create mlflow directory and symlink for artifact compatibility
+RUN mkdir -p /mlflow && ln -sf /mlflow/backend /mlflow/artifacts
 
 # Expose port
 EXPOSE 8000

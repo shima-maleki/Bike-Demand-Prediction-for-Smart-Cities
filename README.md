@@ -230,6 +230,32 @@ Stage: Production
 4. Click "Models" → "bike-demand-forecasting"
 5. See Production model (LightGBM v5)
 
+### Step 9: Launch Streamlit Dashboard
+
+```bash
+# Build dashboard Docker image
+docker build -t bike-demand-dashboard:latest -f docker/dashboard/Dockerfile .
+
+# Run dashboard
+docker run --rm -p 8501:8501 \
+  --network host \
+  -e DB_HOST=localhost \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e DB_DATABASE=bike_demand_db \
+  -e MLFLOW_TRACKING_URI=http://localhost:5000 \
+  bike-demand-dashboard:latest
+```
+
+**Access Dashboard**: http://localhost:8501
+
+The dashboard includes 4 pages:
+1. **🔮 Demand Forecast** - Select station and view predictions
+2. **📊 Model Performance** - View model metrics and comparison
+3. **✅ Data Quality** - Monitor data drift and quality
+4. **💓 System Health** - Check infrastructure status
+
 ## Production Files & Scripts
 
 ### Essential Production Scripts
@@ -258,6 +284,248 @@ docker build -t bike-demand-api:latest -f docker/api/Dockerfile .
 docker build -t bike-demand-dashboard:latest -f docker/dashboard/Dockerfile .
 docker build -t bike-demand-airflow:latest -f docker/airflow/Dockerfile .
 ```
+
+## Streamlit Dashboard
+
+### Running the Dashboard
+
+The Streamlit dashboard provides an interactive web interface for:
+- Viewing bike demand forecasts
+- Monitoring model performance
+- Checking data quality
+- System health monitoring
+
+**Start Dashboard:**
+
+```bash
+# Option 1: Using Docker (Recommended)
+docker run --rm -p 8501:8501 \
+  --network host \
+  -e DB_HOST=localhost \
+  -e DB_PORT=5432 \
+  -e DB_USER=postgres \
+  -e DB_PASSWORD=postgres \
+  -e DB_DATABASE=bike_demand_db \
+  -e MLFLOW_TRACKING_URI=http://localhost:5000 \
+  bike-demand-dashboard:latest
+
+# Option 2: Using docker-compose (if configured in docker-compose.yml)
+cd infrastructure
+docker-compose up dashboard
+
+# Option 3: Local Python (for development)
+streamlit run dashboard/app.py
+```
+
+**Access**: http://localhost:8501
+
+### Dashboard Features
+
+#### 1. 🔮 Demand Forecast Page
+
+**Make Predictions:**
+
+1. **Select Station**
+   - Use dropdown to choose from active bike stations
+   - View station details (capacity, location)
+
+2. **Choose Forecast Horizon**
+   - 1 hour ahead
+   - 6 hours ahead
+   - 24 hours ahead (full day)
+
+3. **View Predictions**
+   - Interactive charts showing predicted demand
+   - Confidence intervals
+   - Historical comparison
+
+**Features:**
+- Real-time predictions from Production model
+- Station map with availability heatmap
+- Demand trends by hour/day
+- Peak hours identification
+
+#### 2. 📊 Model Performance Page
+
+**Monitor ML Models:**
+
+- **Current Production Model**
+  - Model name and version
+  - Test metrics (RMSE, MAE, R², MAPE)
+  - Training timestamp
+
+- **Model Comparison**
+  - Compare all trained models
+  - Performance charts (RMSE over time)
+  - Feature importance plots
+
+- **Experiment History**
+  - View all MLflow experiments
+  - Filter by date/metrics
+  - Download model artifacts
+
+#### 3. ✅ Data Quality Page
+
+**Monitor Data Health:**
+
+- **Data Completeness**
+  - Missing values analysis
+  - Data coverage by hour/day
+  - Station uptime statistics
+
+- **Feature Distribution**
+  - Histogram of key features
+  - Outlier detection
+  - Statistical summaries
+
+- **Data Drift Detection** (using Evidently AI)
+  - Feature drift scores
+  - Alerts when drift > threshold
+  - Drift visualization
+
+#### 4. 💓 System Health Page
+
+**Infrastructure Monitoring:**
+
+- **Service Status**
+  - PostgreSQL: Connection pool, query performance
+  - MLflow: Available models, experiments count
+  - Airflow: DAG status, last run times
+
+- **Database Stats**
+  - Total records by table
+  - Data growth over time
+  - Storage usage
+
+- **System Metrics**
+  - API response times (if running)
+  - Prediction latency
+  - Error rates
+
+### Making Predictions via Dashboard
+
+**Step-by-Step:**
+
+1. **Open Dashboard**
+   ```bash
+   # Navigate to http://localhost:8501
+   ```
+
+2. **Go to "🔮 Demand Forecast" Page**
+   - Click on sidebar navigation
+
+3. **Select a Station**
+   - Choose from dropdown: "Select a bike station"
+   - Example: "Central Park S & 6 Ave"
+
+4. **Choose Prediction Timeframe**
+   - Select radio button: "1 hour", "6 hours", or "24 hours"
+
+5. **View Forecast**
+   - See interactive Plotly chart
+   - Hover over points for exact values
+   - Download chart as PNG
+
+6. **Interpret Results**
+   - **Green zone**: High availability (>10 bikes)
+   - **Yellow zone**: Moderate availability (5-10 bikes)
+   - **Red zone**: Low availability (<5 bikes)
+
+**Example Output:**
+```
+Station: Central Park S & 6 Ave
+Current Time: 2025-12-26 14:30:00
+Predicted Demand (1h ahead): 8 bikes
+Confidence Interval: [6, 10] bikes
+Recommendation: Station will have moderate availability
+```
+
+### Dashboard Configuration
+
+**Environment Variables:**
+
+```bash
+# Database connection
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_DATABASE=bike_demand_db
+
+# MLflow server
+MLFLOW_TRACKING_URI=http://localhost:5000
+
+# Optional: API endpoint (if running)
+API_BASE_URL=http://localhost:8000
+```
+
+**Streamlit Config** (`.streamlit/config.toml`):
+
+```toml
+[server]
+port = 8501
+enableCORS = false
+enableXsrfProtection = false
+
+[theme]
+primaryColor = "#1E88E5"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+```
+
+### Dashboard Screenshots
+
+**Home Page:**
+- Overview of system status
+- Quick metrics (total stations, predictions count, model accuracy)
+- Recent predictions table
+
+**Forecast Page:**
+- Station selector dropdown
+- Interactive demand chart
+- Map view with station locations
+- Historical comparison
+
+**Performance Page:**
+- Model metrics cards
+- RMSE/MAE/R² trend charts
+- Feature importance bar chart
+- Experiment comparison table
+
+### Troubleshooting Dashboard
+
+**Dashboard won't start:**
+```bash
+# Check if port 8501 is available
+lsof -i :8501
+
+# Check database connection
+docker exec bike_demand_postgres pg_isready
+```
+
+**"No data found" errors:**
+```bash
+# Verify data is loaded
+docker exec -it bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT COUNT(*) FROM features;"
+
+# Should return > 0 rows
+```
+
+**MLflow connection errors:**
+```bash
+# Test MLflow is reachable
+curl http://localhost:5000/health
+
+# Verify model exists
+curl http://localhost:5000/api/2.0/mlflow/registered-models/list
+```
+
+**Slow dashboard performance:**
+- Reduce forecast horizon (use 1h instead of 24h)
+- Limit data range in queries
+- Check database indexes are created
 
 ## Project Structure
 
