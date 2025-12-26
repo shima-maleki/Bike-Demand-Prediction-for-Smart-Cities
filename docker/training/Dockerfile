@@ -33,7 +33,6 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 # Copy application code
 COPY src/ /app/src/
-COPY scripts/ /app/scripts/
 COPY config/ /app/config/
 
 # Create necessary directories
@@ -42,5 +41,5 @@ RUN mkdir -p /app/logs /app/data /app/models
 # Set Python path
 ENV PYTHONPATH=/app
 
-# Default command - run production training script
-CMD ["python", "scripts/train_production_model.py"]
+# Default command - run production training using TrainingPipeline module
+CMD ["python", "-m", "src.training.train_pipeline"]

@@ -256,3 +256,100 @@ def train_model(
     """
     pipeline = TrainingPipeline(model_type=model_type)
     return pipeline.run(days_back=days_back, hyperparameters=hyperparameters)
+
+
+if __name__ == "__main__":
+    """
+    Production training script - trains multiple models and promotes best to Production
+    Run with: python -m src.training.train_pipeline
+    """
+    logger.info("=" * 70)
+    logger.info("PRODUCTION MODEL TRAINING")
+    logger.info("=" * 70)
+    logger.info(f"MLflow URI: {settings.mlflow.tracking_uri}")
+    logger.info("")
+
+    # Train XGBoost
+    logger.info("Training XGBoost Model...")
+    xgb_result = train_model(
+        model_type="xgboost",
+        days_back=30,
+        hyperparameters={
+            'n_estimators': 200,
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'subsample': 0.8,
+            'colsample_bytree': 0.8,
+            'random_state': 42
+        }
+    )
+    logger.info(f"✓ XGBoost - Test RMSE: {xgb_result['metrics']['test_rmse']:.2f}")
+    logger.info("")
+
+    # Train LightGBM
+    logger.info("Training LightGBM Model...")
+    lgb_result = train_model(
+        model_type="lightgbm",
+        days_back=30,
+        hyperparameters={
+            'n_estimators': 200,
+            'max_depth': 6,
+            'learning_rate': 0.1,
+            'num_leaves': 31,
+            'min_child_samples': 20,
+            'random_state': 42,
+            'verbose': -1
+        }
+    )
+    logger.info(f"✓ LightGBM - Test RMSE: {lgb_result['metrics']['test_rmse']:.2f}")
+    logger.info("")
+
+    # Compare models and promote best
+    logger.info("=" * 70)
+    logger.info("MODEL COMPARISON")
+    logger.info("=" * 70)
+
+    xgb_rmse = xgb_result['metrics']['test_rmse']
+    lgb_rmse = lgb_result['metrics']['test_rmse']
+
+    if lgb_rmse < xgb_rmse:
+        best_model = "LightGBM"
+        best_run_id = lgb_result['run_id']
+        best_rmse = lgb_rmse
+    else:
+        best_model = "XGBoost"
+        best_run_id = xgb_result['run_id']
+        best_rmse = xgb_rmse
+
+    logger.info(f"Best Model: {best_model} (Test RMSE: {best_rmse:.2f})")
+
+    # Register and promote model to Production
+    client = mlflow.tracking.MlflowClient()
+
+    # Get model URI from the best run
+    model_uri = f"runs:/{best_run_id}/model"
+
+    # Register model
+    model_name = "bike-demand-forecasting"
+    model_version = mlflow.register_model(model_uri, model_name)
+
+    logger.info(f"Latest model version: {model_version.version}")
+
+    # Promote to Production
+    client.transition_model_version_stage(
+        name=model_name,
+        version=model_version.version,
+        stage="Production",
+        archive_existing_versions=True
+    )
+
+    logger.success(f"✅ Model version {model_version.version} promoted to Production!")
+
+    logger.info("=" * 70)
+    logger.info("TRAINING COMPLETE")
+    logger.info("=" * 70)
+    logger.info(f"Best Model: {best_model}")
+    logger.info(f"Test RMSE: {best_rmse:.2f} bikes")
+    logger.info(f"MLflow UI: {settings.mlflow.tracking_uri}")
+    logger.info(f"Model: {model_name} v{model_version.version}")
+    logger.info(f"Stage: Production")
