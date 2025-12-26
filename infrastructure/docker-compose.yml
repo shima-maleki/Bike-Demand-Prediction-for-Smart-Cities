@@ -44,11 +44,11 @@ services:
       GUNICORN_CMD_ARGS: "--timeout 300"
       MLFLOW_ARTIFACTS_DESTINATION: file:///mlflow/artifacts
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health').read()"]
+      interval: 30s
+      timeout: 10s
       retries: 5
-      start_period: 30s
+      start_period: 60s
     networks:
       - bike_demand_network
 
