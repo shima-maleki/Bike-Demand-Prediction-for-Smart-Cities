@@ -206,11 +206,33 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-claude.md 
+# Production-specific ignores
+claude.md
 secrets.toml
-.claude
-data
-mlruns
-notebooks/catboost_info
+.claude/
+
+# Runtime data directories (should be in Docker volumes)
+data/
+mlruns/
+logs/
+models/
+
+# Airflow runtime
+airflow/logs/
+airflow/.airflow_db_initialized
+
+# Development config files
+.python-version
+.pre-commit-config.yaml
+.flake8
+mypy.ini
+pytest.ini
+uv.lock
+
+# macOS
+.DS_Store
+
+# Old scripts (historical)
 collect_and_train.py
 train_model.py
+notebooks/catboost_info

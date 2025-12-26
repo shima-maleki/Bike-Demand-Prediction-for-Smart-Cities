@@ -7,133 +7,75 @@ on:
 
   # Allow manual trigger
   workflow_dispatch:
-    inputs:
-      model_type:
-        description: 'Model type to train'
-        required: false
-        default: 'all'
-        type: choice
-        options:
-          - all
-          - xgboost
-          - lightgbm
-          - catboost
-      days_back:
-        description: 'Days of historical data'
-        required: false
-        default: '30'
 
 jobs:
   train-models:
-    name: Train ML Models
+    name: Train ML Models (Docker)
     runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: bike_demand
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-training-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-training-
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -e .
-
-    - name: Initialize database
-      run: |
-        PGPASSWORD=postgres psql -h localhost -U postgres -d bike_demand -f infrastructure/postgres/schema.sql
-
-    - name: Create .env file
+    - name: Create environment file
       run: |
         cat > .env << EOF
-        DATABASE_URL=postgresql://postgres:postgres@localhost:5432/bike_demand
-        MLFLOW_TRACKING_URI=http://localhost:5000
+        DB_HOST=postgres
+        DB_PORT=5432
+        DB_USER=postgres
+        DB_PASSWORD=postgres
+        DB_DATABASE=bike_demand
+        MLFLOW_TRACKING_URI=http://mlflow:5000
         WEATHER_API_KEY=${{ secrets.WEATHER_API_KEY }}
         ENVIRONMENT=ci
         EOF
 
-    - name: Start MLflow Server
+    - name: Start infrastructure
       run: |
-        pip install mlflow
-        mlflow server --host 0.0.0.0 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlflow-artifacts &
+        cd infrastructure
+        docker-compose up -d postgres mlflow
         sleep 10
 
-    - name: Collect sample data
+    - name: Wait for PostgreSQL
       run: |
-        python scripts/test_data_collection.py || echo "Data collection failed, continuing with mock data"
-      continue-on-error: true
+        timeout 60 bash -c 'until docker exec bike-demand-postgres pg_isready; do sleep 2; done'
 
-    - name: Train XGBoost model
-      if: ${{ github.event.inputs.model_type == 'all' || github.event.inputs.model_type == 'xgboost' }}
+    - name: Initialize database
       run: |
-        python -c "
-        from src.training.train_pipeline import TrainingPipeline
-        pipeline = TrainingPipeline(model_type='xgboost')
-        result = pipeline.run(days_back=${{ github.event.inputs.days_back || 30 }})
-        print(f'XGBoost RMSE: {result[\"metrics\"][\"test_rmse\"]:.2f}')
-        "
+        docker exec -i bike-demand-postgres psql -U postgres -d bike_demand < infrastructure/postgres/schema.sql
 
-    - name: Train LightGBM model
-      if: ${{ github.event.inputs.model_type == 'all' || github.event.inputs.model_type == 'lightgbm' }}
+    - name: Build training image
       run: |
-        python -c "
-        from src.training.train_pipeline import TrainingPipeline
-        pipeline = TrainingPipeline(model_type='lightgbm')
-        result = pipeline.run(days_back=${{ github.event.inputs.days_back || 30 }})
-        print(f'LightGBM RMSE: {result[\"metrics\"][\"test_rmse\"]:.2f}')
-        "
+        docker build -t bike-demand-trainer:latest -f docker/training/Dockerfile .
 
-    - name: Train CatBoost model
-      if: ${{ github.event.inputs.model_type == 'all' || github.event.inputs.model_type == 'catboost' }}
+    - name: Run training container
       run: |
-        python -c "
-        from src.training.train_pipeline import TrainingPipeline
-        pipeline = TrainingPipeline(model_type='catboost')
-        result = pipeline.run(days_back=${{ github.event.inputs.days_back || 30 }})
-        print(f'CatBoost RMSE: {result[\"metrics\"][\"test_rmse\"]:.2f}')
-        "
+        docker run --rm \
+          --network infrastructure_default \
+          -e DB_HOST=postgres \
+          -e DB_PORT=5432 \
+          -e DB_USER=postgres \
+          -e DB_PASSWORD=postgres \
+          -e DB_DATABASE=bike_demand \
+          -e MLFLOW_TRACKING_URI=http://mlflow:5000 \
+          bike-demand-trainer:latest
 
-    - name: Upload MLflow artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: mlflow-artifacts
-        path: mlflow-artifacts/
-        retention-days: 30
+    - name: Cleanup
+      if: always()
+      run: |
+        cd infrastructure
+        docker-compose down -v
 
     - name: Create training summary
       run: |
         echo "## Training Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "- **Model Types**: ${{ github.event.inputs.model_type || 'all' }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Days Back**: ${{ github.event.inputs.days_back || '30' }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Training Mode**: Docker container" >> $GITHUB_STEP_SUMMARY
         echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "Models trained successfully and logged to MLflow." >> $GITHUB_STEP_SUMMARY
+        echo "Models trained successfully using production Docker setup." >> $GITHUB_STEP_SUMMARY
 
   notify:
     name: Notify Training Results
