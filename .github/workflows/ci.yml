@@ -85,7 +85,6 @@ jobs:
         test -f scripts/backfill_historical_data.py
         test -f scripts/backfill_weather.py
         test -f scripts/generate_features.py
-        test -f scripts/train_production_model.py
         echo "✅ All required files present"
 
     - name: Check directory structure
