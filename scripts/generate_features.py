@@ -110,11 +110,23 @@ for window_hours in [3, 6]:
     merged[f'bikes_rolling_std_{window_hours}h'] = merged.groupby('station_id')['bikes_available'] \
         .transform(lambda x: x.rolling(window=window_hours, min_periods=1).std())
 
-# Drop rows with NaN (from lag/rolling features)
-logger.info("Cleaning data...")
+# Fill NaN values instead of dropping (lag/rolling features have NaN for first N hours)
+logger.info("Filling missing values...")
 original_len = len(merged)
-merged = merged.dropna()
-logger.info(f"Dropped {original_len - len(merged)} rows with NaN values")
+
+# Fill lag and rolling features with 0 (indicates no historical data available)
+lag_rolling_cols = [col for col in merged.columns if 'lag' in col or 'rolling' in col]
+merged[lag_rolling_cols] = merged[lag_rolling_cols].fillna(0)
+
+# Fill weather features with median or default values
+weather_cols = ['temperature', 'humidity', 'wind_speed', 'precipitation']
+for col in weather_cols:
+    if col in merged.columns:
+        median_val = merged[col].median() if len(merged[col].dropna()) > 0 else 0
+        merged[col] = merged[col].fillna(median_val)
+
+filled_count = original_len - len(merged.dropna())
+logger.info(f"Filled {filled_count} NaN values (kept all {len(merged)} rows)")
 
 # Limit to 10,000 features for faster training
 merged = merged.head(10000)
