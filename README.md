@@ -59,6 +59,28 @@ Production-ready machine learning system that predicts bike rental demand using 
   </tr>
 </table>
 
+## 📚 Complete Tutorial
+
+**Want to build this system from scratch?** Check out our comprehensive tutorial:
+
+👉 **[Complete Step-by-Step Tutorial](docs/tutorial/README.md)** 👈
+
+Perfect for:
+- 🎓 **Students & Beginners** - Learn MLOps end-to-end (20-30 hours)
+- 💼 **Interview Prep** - Understand architecture & design decisions (5 hours)
+- 🚀 **ML Engineers** - Build production ML systems (15 hours)
+
+The tutorial covers:
+- Setting up the environment
+- Database design & Docker orchestration
+- Data collection & feature engineering
+- Model training with MLflow
+- API development with FastAPI
+- Dashboard with Streamlit
+- Airflow orchestration
+- CI/CD with GitHub Actions
+- Design decisions & troubleshooting
+
 ## Quick Start (15 Minutes)
 
 ### Prerequisites
