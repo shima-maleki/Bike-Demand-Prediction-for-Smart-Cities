@@ -1,12 +1,17 @@
 name: Model Training
 
 on:
-  # Run weekly on Sundays at 2 AM UTC
-  schedule:
-    - cron: '0 2 * * 0'
-
-  # Allow manual trigger
+  # Manual trigger only - for production use after data is loaded
   workflow_dispatch:
+    inputs:
+      use_test_data:
+        description: 'Use synthetic test data (for CI testing)'
+        required: false
+        default: 'true'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
 
 jobs:
   train-models:
@@ -50,8 +55,53 @@ jobs:
       run: |
         docker build -t bike-demand-trainer:latest -f docker/training/Dockerfile .
 
+    - name: Generate synthetic test data
+      if: ${{ github.event.inputs.use_test_data == 'true' }}
+      run: |
+        echo "📊 Generating synthetic test data for CI training..."
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db << 'SQL'
+        -- Insert test bike stations
+        INSERT INTO bike_stations (station_id, name, latitude, longitude, capacity, is_active) VALUES
+        ('test-station-1', 'Test Station 1', 40.7589, -73.9851, 30, true),
+        ('test-station-2', 'Test Station 2', 40.7614, -73.9776, 40, true),
+        ('test-station-3', 'Test Station 3', 40.7527, -73.9772, 35, true);
+
+        -- Insert historical bike station status (last 30 days, hourly = 720 hours)
+        INSERT INTO bike_station_status (station_id, timestamp, bikes_available, docks_available)
+        SELECT
+          s.station_id,
+          NOW() - (i || ' hours')::INTERVAL as timestamp,
+          FLOOR(RANDOM() * 20 + 5)::INT as bikes_available,
+          FLOOR(RANDOM() * 15 + 5)::INT as docks_available
+        FROM bike_stations s
+        CROSS JOIN generate_series(1, 720) i
+        WHERE s.station_id LIKE 'test-station-%';
+
+        -- Insert weather data (last 30 days, hourly)
+        INSERT INTO weather_data (timestamp, temperature, feels_like, humidity, wind_speed, precipitation, weather_condition, visibility, pressure)
+        SELECT
+          NOW() - (i || ' hours')::INTERVAL as timestamp,
+          15 + RANDOM() * 15 as temperature,
+          15 + RANDOM() * 15 as feels_like,
+          40 + RANDOM() * 40 as humidity,
+          RANDOM() * 20 as wind_speed,
+          RANDOM() * 5 as precipitation,
+          (ARRAY['Clear', 'Clouds', 'Rain'])[FLOOR(RANDOM() * 3 + 1)] as weather_condition,
+          8000 + RANDOM() * 2000 as visibility,
+          1000 + RANDOM() * 30 as pressure
+        FROM generate_series(1, 720) i;
+
+        \echo '✅ Test data loaded:'
+        SELECT 'Stations' as type, COUNT(*) as count FROM bike_stations WHERE station_id LIKE 'test-station-%'
+        UNION ALL
+        SELECT 'Status records', COUNT(*) FROM bike_station_status
+        UNION ALL
+        SELECT 'Weather records', COUNT(*) FROM weather_data;
+        SQL
+
     - name: Run training container
       run: |
+        echo "🚂 Starting model training..."
         docker run --rm \
           --network infrastructure_bike_demand_network \
           -e DB_HOST=bike_demand_postgres \
@@ -73,6 +123,7 @@ jobs:
         echo "## Training Summary" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "- **Training Mode**: Docker container" >> $GITHUB_STEP_SUMMARY
+        echo "- **Test Data**: ${{ github.event.inputs.use_test_data }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Timestamp**: $(date -u)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Models trained successfully using production Docker setup." >> $GITHUB_STEP_SUMMARY

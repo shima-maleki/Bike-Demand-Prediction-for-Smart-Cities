@@ -422,11 +422,16 @@ The project includes 3 automated GitHub Actions workflows for continuous integra
 
 #### 3. Model Training
 **Triggers**:
-- Weekly schedule (Sundays at 2 AM UTC)
-- Manual workflow dispatch
+- Manual workflow dispatch only
+
+**Options:**
+- `use_test_data`: Use synthetic test data for CI validation (default: true)
+  - `true`: Generates 30 days of synthetic data for 3 test stations
+  - `false`: Uses production data (requires data to be loaded first)
 
 **Jobs:**
 - Builds training Docker container
+- Optionally generates synthetic test data (3 stations, 720 hourly records)
 - Runs model training pipeline
 - Trains XGBoost and LightGBM models
 - Evaluates performance on test set
@@ -441,8 +446,11 @@ The project includes 3 automated GitHub Actions workflows for continuous integra
 # View all workflow runs
 open https://github.com/shima-maleki/Bike-Demand-Prediction-for-Smart-Cities/actions
 
-# Trigger model training manually
-# Go to Actions tab → Model Training → Run workflow
+# Trigger model training manually with test data (for CI validation)
+# Go to Actions tab → Model Training → Run workflow → use_test_data: true
+
+# Trigger model training with production data (after data is loaded)
+# Go to Actions tab → Model Training → Run workflow → use_test_data: false
 ```
 
 ### Local CI/CD Testing
