@@ -126,6 +126,21 @@ jobs:
         echo "Timestamp range in bike_station_status:"
         docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM bike_station_status;"
 
+    - name: Debug - Check features table before training
+      run: |
+        echo "🔍 FINAL CHECK - Features table status:"
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db << 'SQL'
+        SELECT 'Total features' as metric, COUNT(*)::TEXT as value FROM features
+        UNION ALL
+        SELECT 'Features v1.0', COUNT(*)::TEXT FROM features WHERE feature_version = 'v1.0'
+        UNION ALL
+        SELECT 'Min timestamp', MIN(timestamp)::TEXT FROM features
+        UNION ALL
+        SELECT 'Max timestamp', MAX(timestamp)::TEXT FROM features
+        UNION ALL
+        SELECT 'Stations', STRING_AGG(DISTINCT station_id, ', ') FROM features;
+        SQL
+
     - name: Run training container
       run: |
         echo "🚂 Starting model training..."
