@@ -99,6 +99,21 @@ jobs:
         SELECT 'Weather records', COUNT(*) FROM weather_data;
         SQL
 
+    - name: Generate features from raw data
+      if: ${{ github.event.inputs.use_test_data != 'false' }}
+      run: |
+        echo "🔧 Running feature engineering on synthetic data..."
+        docker run --rm \
+          --network infrastructure_bike_demand_network \
+          -e DB_HOST=bike_demand_postgres \
+          -e DB_PORT=5432 \
+          -e DB_USER=postgres \
+          -e DB_PASSWORD=postgres \
+          -e DB_DATABASE=bike_demand_db \
+          --entrypoint python \
+          bike-demand-trainer:latest \
+          scripts/generate_features.py
+
     - name: Run training container
       run: |
         echo "🚂 Starting model training..."
