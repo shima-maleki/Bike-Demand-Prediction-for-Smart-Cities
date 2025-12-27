@@ -35,7 +35,7 @@ jobs:
     - name: Start infrastructure
       run: |
         cd infrastructure
-        docker-compose up -d postgres mlflow
+        docker compose up -d postgres mlflow
         sleep 10
 
     - name: Wait for PostgreSQL
@@ -66,7 +66,7 @@ jobs:
       if: always()
       run: |
         cd infrastructure
-        docker-compose down -v
+        docker compose down -v
 
     - name: Create training summary
       run: |
