@@ -29,11 +29,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
     "pyyaml>=6.0.1" \
     "loguru>=0.7.2" \
     "pydantic>=2.5.0" \
-    "pydantic-settings>=2.1.0"
+    "pydantic-settings>=2.1.0" \
+    "holidays>=0.38"
 
 # Copy application code
 COPY src/ /app/src/
 COPY config/ /app/config/
+COPY scripts/ /app/scripts/
 
 # Create necessary directories
 RUN mkdir -p /app/logs /app/data /app/models
