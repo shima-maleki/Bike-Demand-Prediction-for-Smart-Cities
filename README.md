@@ -26,6 +26,39 @@ Production-ready machine learning system that predicts bike rental demand using 
 - 🔍 **Comprehensive Monitoring**: System health, model performance, data quality
 - 🚀 **CI/CD Ready**: GitHub Actions for automated testing and deployment
 
+## Dashboard Screenshots
+
+<table>
+  <tr>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.54.23.png" alt="Dashboard Home" />
+      <p align="center"><b>Dashboard Home</b><br/>System overview and model status</p>
+    </td>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.54.33.png" alt="Demand Forecast" />
+      <p align="center"><b>Demand Forecast</b><br/>Real-time predictions with confidence intervals</p>
+    </td>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.54.41.png" alt="Model Performance" />
+      <p align="center"><b>Model Performance</b><br/>Current production model metrics</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.54.45.png" alt="Metrics Visualization" />
+      <p align="center"><b>Metrics Visualization</b><br/>Error comparison and R² score</p>
+    </td>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.54.50.png" alt="Data Quality" />
+      <p align="center"><b>Data Quality</b><br/>Pipeline monitoring and freshness</p>
+    </td>
+    <td width="33%">
+      <img src="static/Screenshot 2025-12-27 at 18.55.08.png" alt="System Health" />
+      <p align="center"><b>System Health</b><br/>Component status and system metrics</p>
+    </td>
+  </tr>
+</table>
+
 ## Quick Start (15 Minutes)
 
 ### Prerequisites
