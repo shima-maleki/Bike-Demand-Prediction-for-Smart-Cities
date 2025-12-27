@@ -82,6 +82,24 @@ class FeatureStore:
 
                 status_df = pd.read_sql(status_query, db.connection())
 
+                logger.debug(f"Status DF shape: {status_df.shape}, columns: {list(status_df.columns)}")
+                logger.debug(f"Features expanded shape: {features_expanded.shape}")
+
+                # Check if bikes_available exists
+                if 'bikes_available' not in status_df.columns:
+                    logger.error(f"bikes_available not in status_df! Columns: {list(status_df.columns)}")
+                    raise ValueError("bikes_available column missing from bike_station_status query")
+
+                # Drop bikes_available from features if it exists (it will be from feature JSON)
+                # We want to use the actual bikes_available from bike_station_status table
+                if 'bikes_available' in features_expanded.columns:
+                    logger.debug("Dropping bikes_available from features (will use from status table)")
+                    features_expanded = features_expanded.drop(columns=['bikes_available'])
+
+                # Also drop docks_available from features if it exists
+                if 'docks_available' in features_expanded.columns:
+                    features_expanded = features_expanded.drop(columns=['docks_available'])
+
                 # Merge features with target
                 merged_df = pd.merge(
                     features_expanded,
@@ -89,6 +107,10 @@ class FeatureStore:
                     on=['station_id', 'timestamp'],
                     how='left'
                 )
+
+                logger.debug(f"Merged DF shape: {merged_df.shape}, has bikes_available: {'bikes_available' in merged_df.columns}")
+                if 'bikes_available' in merged_df.columns:
+                    logger.debug(f"bikes_available null count: {merged_df['bikes_available'].isnull().sum()}")
 
                 logger.info(f"Retrieved {len(merged_df)} records with {len(merged_df.columns)} features")
                 return merged_df

@@ -72,7 +72,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # API Configuration
-API_URL = os.getenv("API_URL", st.secrets.get("API_URL", "http://localhost:8000"))
+API_URL = os.getenv("API_URL", "http://localhost:8000")
+
+# DEBUG: Show what API_URL is being used
+st.sidebar.markdown(f"**🔍 Debug Info:**")
+st.sidebar.code(f"API_URL: {API_URL}")
 
 
 def check_api_health():
@@ -162,6 +166,9 @@ with st.sidebar:
 
 # Main Content
 st.markdown("<div class='main-header'>🚴 Bike Demand Forecasting Dashboard</div>", unsafe_allow_html=True)
+
+# VERSION INDICATOR - If you see this, the page has loaded the latest code
+st.info(f"✅ **Dashboard Version: 2025-12-27-v2** | API URL: `{API_URL}` | Status: {'🟢 Connected' if check_api_health() else '🔴 Disconnected'}")
 
 # Welcome message
 st.markdown("""

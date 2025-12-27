@@ -9,6 +9,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
+import os
 
 # Page config
 st.set_page_config(
@@ -18,7 +19,7 @@ st.set_page_config(
 )
 
 # API Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 st.title("🔮 Bike Demand Forecast")
 st.markdown("Real-time predictions and multi-hour forecasts for bike station demand")

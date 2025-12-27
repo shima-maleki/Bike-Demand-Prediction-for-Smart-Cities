@@ -10,6 +10,7 @@ import plotly.graph_objects as go
 from datetime import datetime
 import sys
 from pathlib import Path
+import os
 
 # Add project root to path for imports
 project_root = Path(__file__).parent.parent.parent
@@ -23,7 +24,7 @@ st.set_page_config(
 )
 
 # API Configuration
-API_URL = st.secrets.get("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 st.title("💓 System Health")
 st.markdown("Monitor all system components, services, and infrastructure health")
