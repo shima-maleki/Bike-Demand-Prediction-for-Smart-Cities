@@ -70,7 +70,7 @@ jobs:
         INSERT INTO bike_station_status (station_id, timestamp, bikes_available, docks_available)
         SELECT
           s.station_id,
-          NOW() - (i || ' hours')::INTERVAL as timestamp,
+          NOW() - ((720 - i) || ' hours')::INTERVAL as timestamp,
           FLOOR(RANDOM() * 20 + 5)::INT as bikes_available,
           FLOOR(RANDOM() * 15 + 5)::INT as docks_available
         FROM bike_stations s
@@ -80,7 +80,7 @@ jobs:
         -- Insert weather data (last 30 days, hourly)
         INSERT INTO weather_data (timestamp, temperature, feels_like, humidity, wind_speed, precipitation, weather_condition, visibility, pressure)
         SELECT
-          NOW() - (i || ' hours')::INTERVAL as timestamp,
+          NOW() - ((720 - i) || ' hours')::INTERVAL as timestamp,
           15 + RANDOM() * 15 as temperature,
           15 + RANDOM() * 15 as feels_like,
           40 + RANDOM() * 40 as humidity,
