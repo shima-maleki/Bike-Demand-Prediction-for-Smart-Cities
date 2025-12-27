@@ -114,6 +114,14 @@ jobs:
           bike-demand-trainer:latest \
           scripts/generate_features.py
 
+    - name: Verify features were created
+      if: ${{ github.event.inputs.use_test_data != 'false' }}
+      run: |
+        echo "🔍 Verifying features table..."
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT COUNT(*) as feature_count, feature_version FROM features GROUP BY feature_version;"
+        echo "Sample feature record:"
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT station_id, timestamp, feature_version FROM features LIMIT 5;"
+
     - name: Run training container
       run: |
         echo "🚂 Starting model training..."
