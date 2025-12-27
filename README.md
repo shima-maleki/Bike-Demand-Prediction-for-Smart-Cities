@@ -1,6 +1,6 @@
 # Bike Demand Prediction for Smart Cities
 
-**Level 2 MLOps** production-grade bike demand forecasting system with automated data pipelines, experiment tracking, model registry, and comprehensive monitoring.
+**Level 2 MLOps** production-grade bike demand forecasting system with automated data pipelines, experiment tracking, model registry, and comprehensive monitoring
 
 [![Python 3.11](https://img.shields.io/badge/python-3.11-blue.svg)](https://www.python.org/downloads/release/python-3110/)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
