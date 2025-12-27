@@ -29,13 +29,21 @@ class BikeDedemandPredictor:
         # Initialize feature generators
         self.temporal_gen = TemporalFeatureGenerator()
         self.weather_gen = WeatherFeatureGenerator()
-        self.lag_gen = LagFeatureGenerator(
-            lag_hours=[1, 3, 6, 12, 24, 48, 168],
+
+        # Lag generators for both bikes and docks
+        self.bikes_lag_gen = LagFeatureGenerator(
+            lag_hours=[1, 6, 24],
             target_column="bikes_available"
         )
+        self.docks_lag_gen = LagFeatureGenerator(
+            lag_hours=[1, 6, 24],
+            target_column="docks_available"
+        )
+
+        # Rolling generators for bikes
         self.rolling_gen = RollingFeatureGenerator(
-            windows=[3, 6, 12, 24],
-            statistics=["mean", "std", "min", "max"],
+            windows=[3, 6],
+            statistics=["mean", "std"],
             target_column="bikes_available"
         )
         self.holiday_gen = HolidayFeatureGenerator()
@@ -256,10 +264,15 @@ class BikeDedemandPredictor:
         # Generate temporal features
         df = self.temporal_gen.generate(df)
 
+        # Add custom temporal features that the model expects
+        df['is_morning_rush'] = ((df['hour_of_day'].between(7, 9)) & (df['is_weekday'] == 1)).astype(int)
+        df['is_evening_rush'] = ((df['hour_of_day'].between(17, 20)) & (df['is_weekday'] == 1)).astype(int)
+        df['is_business_hours'] = (df['hour_of_day'].between(9, 17)).astype(int)
+
         # Add weather features if provided
         if weather_data:
             for key, value in weather_data.items():
-                df[key] = value
+                df[key] = float(value) if key in ['temperature', 'humidity', 'wind_speed', 'precipitation'] else value
             df = self.weather_gen.generate(df)
         else:
             # Try to get latest weather from database
@@ -268,10 +281,35 @@ class BikeDedemandPredictor:
                 if latest_weather:
                     for key, value in latest_weather.items():
                         if key != "timestamp":
-                            df[key] = value
+                            # Ensure numeric columns are float type
+                            if key in ['temperature', 'feels_like', 'humidity', 'wind_speed', 'precipitation', 'visibility', 'pressure']:
+                                df[key] = float(value) if value is not None else 0.0
+                            else:
+                                df[key] = value
+                    df = self.weather_gen.generate(df)
+                else:
+                    # No weather data available, use default values
+                    logger.warning("No weather data available, using defaults")
+                    df['temperature'] = 20.0
+                    df['feels_like'] = 20.0
+                    df['humidity'] = 60.0
+                    df['wind_speed'] = 5.0
+                    df['precipitation'] = 0.0
+                    df['weather_condition'] = 'Clear'
+                    df['visibility'] = 10000.0
+                    df['pressure'] = 1013.0
                     df = self.weather_gen.generate(df)
             except Exception as e:
-                logger.warning(f"Could not fetch weather data: {e}")
+                logger.warning(f"Could not fetch weather data: {e}, using defaults")
+                df['temperature'] = 20.0
+                df['feels_like'] = 20.0
+                df['humidity'] = 60.0
+                df['wind_speed'] = 5.0
+                df['precipitation'] = 0.0
+                df['weather_condition'] = 'Clear'
+                df['visibility'] = 10000.0
+                df['pressure'] = 1013.0
+                df = self.weather_gen.generate(df)
 
         # Add holiday features
         df = self.holiday_gen.generate(df)
@@ -281,13 +319,20 @@ class BikeDedemandPredictor:
             historical_data = self._get_historical_data(station_id, timestamp)
 
             if historical_data is not None and len(historical_data) > 0:
+                # Ensure docks_available column exists in df for lag feature generation
+                if 'docks_available' not in df.columns:
+                    df['docks_available'] = 0  # Placeholder
+
                 # Combine historical with current
                 combined = pd.concat([historical_data, df], ignore_index=True)
 
-                # Generate lag features
-                combined = self.lag_gen.generate(combined)
+                # Generate lag features for bikes
+                combined = self.bikes_lag_gen.generate(combined)
 
-                # Generate rolling features
+                # Generate lag features for docks (rename features to have 'docks' prefix)
+                combined = self.docks_lag_gen.generate(combined)
+
+                # Generate rolling features for bikes
                 combined = self.rolling_gen.generate(combined)
 
                 # Get only the last row (our prediction point)
@@ -298,9 +343,9 @@ class BikeDedemandPredictor:
         except Exception as e:
             logger.warning(f"Could not generate lag/rolling features: {e}")
 
-        # Remove target column
-        if "bikes_available" in df.columns:
-            df = df.drop(columns=["bikes_available"])
+        # Remove target columns
+        target_cols = ["bikes_available", "docks_available"]
+        df = df.drop(columns=[c for c in target_cols if c in df.columns])
 
         # Remove non-feature columns
         non_feature_cols = ["station_id", "timestamp", "date", "holiday_name"]
@@ -310,8 +355,32 @@ class BikeDedemandPredictor:
         try:
             df = df[model_features]
         except KeyError as e:
-            logger.error(f"Missing features: {e}")
-            raise ValueError(f"Required features not available: {e}")
+            # Handle missing lag/rolling features by filling with defaults
+            missing_features = set(model_features) - set(df.columns)
+            logger.warning(f"Missing {len(missing_features)} features, filling with defaults: {missing_features}")
+
+            for feature in missing_features:
+                if 'lag' in feature or 'rolling' in feature:
+                    # For lag/rolling features, use 0 as default (indicates no historical data)
+                    df[feature] = 0.0
+                    logger.debug(f"Filled {feature} with 0.0")
+                else:
+                    # For other features, raise error as they should have been generated
+                    logger.error(f"Missing non-lag feature: {feature}")
+                    raise ValueError(f"Required feature not available: {feature}")
+
+            # Now try again with filled features
+            df = df[model_features]
+
+        # Ensure all columns are numeric (convert object dtypes to float)
+        for col in df.columns:
+            if df[col].dtype == 'object':
+                try:
+                    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0.0)
+                    logger.warning(f"Converted column {col} from object to numeric")
+                except Exception as e:
+                    logger.error(f"Could not convert {col} to numeric: {e}")
+                    df[col] = 0.0
 
         return df
 

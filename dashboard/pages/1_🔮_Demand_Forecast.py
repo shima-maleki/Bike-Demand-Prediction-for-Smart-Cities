@@ -10,6 +10,15 @@ import plotly.graph_objects as go
 import plotly.express as px
 from datetime import datetime, timedelta
 import os
+import sys
+from pathlib import Path
+
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
+from src.config.database import get_db_context
+from sqlalchemy import text
 
 # Page config
 st.set_page_config(
@@ -35,6 +44,29 @@ if not api_healthy:
     st.error("⚠️ API is not available. Please start the API server.")
     st.stop()
 
+
+@st.cache_data(ttl=300)  # Cache for 5 minutes
+def load_stations():
+    """Load available bike stations from database"""
+    try:
+        with get_db_context() as db:
+            query = text("""
+                SELECT DISTINCT bs.station_id, bs.name, bs.capacity
+                FROM bike_stations bs
+                INNER JOIN bike_station_status bss ON bs.station_id = bss.station_id
+                ORDER BY bs.name
+                LIMIT 100
+            """)
+            result = db.execute(query)
+            stations = result.fetchall()
+
+            # Create a mapping of display name to station_id
+            station_map = {f"{row[1]} ({row[2]} bikes)": row[0] for row in stations}
+            return station_map
+    except Exception as e:
+        st.error(f"Error loading stations: {e}")
+        return {}
+
 # Tabs
 tab1, tab2, tab3 = st.tabs(["📍 Single Station Forecast", "🔄 Batch Predictions", "📈 Multi-Station Comparison"])
 
@@ -47,12 +79,22 @@ with tab1:
     with col1:
         st.subheader("Configuration")
 
-        # Station ID input
-        station_id = st.text_input(
-            "Station ID",
-            value="station_1",
-            help="Enter the bike station ID"
+        # Load available stations
+        station_map = load_stations()
+
+        if not station_map:
+            st.error("No stations available. Please check database connection.")
+            st.stop()
+
+        # Station selection
+        selected_station_display = st.selectbox(
+            "Select Station",
+            options=list(station_map.keys()),
+            help="Choose a bike station for forecasting"
         )
+
+        # Get the actual station_id
+        station_id = station_map[selected_station_display]
 
         # Forecast horizon
         hours_ahead = st.slider(
