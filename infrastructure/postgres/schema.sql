@@ -71,7 +71,8 @@ CREATE TABLE IF NOT EXISTS features (
     feature_json JSONB NOT NULL,
     feature_version VARCHAR(20) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (station_id) REFERENCES bike_stations(station_id) ON DELETE CASCADE
+    FOREIGN KEY (station_id) REFERENCES bike_stations(station_id) ON DELETE CASCADE,
+    UNIQUE (station_id, timestamp, feature_version)  -- Allow ON CONFLICT for upserts
 );
 
 -- Create indexes for feature queries
