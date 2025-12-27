@@ -66,21 +66,21 @@ jobs:
         ('test-station-2', 'Test Station 2', 40.7614, -73.9776, 40, true),
         ('test-station-3', 'Test Station 3', 40.7527, -73.9772, 35, true);
 
-        -- Insert historical bike station status (last 30 days, hourly = 720 hours)
+        -- Insert historical bike station status (last 35 days, hourly = 840 hours, extra buffer for timezone)
         INSERT INTO bike_station_status (station_id, timestamp, bikes_available, docks_available)
         SELECT
           s.station_id,
-          (NOW() AT TIME ZONE 'UTC') - ((720 - i) || ' hours')::INTERVAL as timestamp,
+          CURRENT_TIMESTAMP - ((840 - i) || ' hours')::INTERVAL as timestamp,
           FLOOR(RANDOM() * 20 + 5)::INT as bikes_available,
           FLOOR(RANDOM() * 15 + 5)::INT as docks_available
         FROM bike_stations s
-        CROSS JOIN generate_series(1, 720) i
+        CROSS JOIN generate_series(1, 840) i
         WHERE s.station_id LIKE 'test-station-%';
 
-        -- Insert weather data (last 30 days, hourly)
+        -- Insert weather data (last 35 days, hourly, matching bike data)
         INSERT INTO weather_data (timestamp, temperature, feels_like, humidity, wind_speed, precipitation, weather_condition, visibility, pressure)
         SELECT
-          (NOW() AT TIME ZONE 'UTC') - ((720 - i) || ' hours')::INTERVAL as timestamp,
+          CURRENT_TIMESTAMP - ((840 - i) || ' hours')::INTERVAL as timestamp,
           15 + RANDOM() * 15 as temperature,
           15 + RANDOM() * 15 as feels_like,
           40 + RANDOM() * 40 as humidity,
@@ -89,7 +89,7 @@ jobs:
           (ARRAY['Clear', 'Clouds', 'Rain'])[FLOOR(RANDOM() * 3 + 1)] as weather_condition,
           8000 + RANDOM() * 2000 as visibility,
           1000 + RANDOM() * 30 as pressure
-        FROM generate_series(1, 720) i;
+        FROM generate_series(1, 840) i;
 
         \echo '✅ Test data loaded:'
         SELECT 'Stations' as type, COUNT(*) as count FROM bike_stations WHERE station_id LIKE 'test-station-%'
@@ -121,6 +121,10 @@ jobs:
         docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT COUNT(*) as feature_count, feature_version FROM features GROUP BY feature_version;"
         echo "Sample feature record:"
         docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT station_id, timestamp, feature_version FROM features LIMIT 5;"
+        echo "Timestamp range in features:"
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM features;"
+        echo "Timestamp range in bike_station_status:"
+        docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db -c "SELECT MIN(timestamp) as min_ts, MAX(timestamp) as max_ts FROM bike_station_status;"
 
     - name: Run training container
       run: |
