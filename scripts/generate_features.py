@@ -169,7 +169,7 @@ with get_db_context() as db:
                     "station_id": str(row['station_id']),
                     "timestamp": row['timestamp'],
                     "feature_json": json.dumps(features_json),
-                    "feature_version": "v1"
+                    "feature_version": "v1.0"
                 }
             )
             inserted += 1
