@@ -56,7 +56,7 @@ jobs:
         docker build -t bike-demand-trainer:latest -f docker/training/Dockerfile .
 
     - name: Generate synthetic test data
-      if: ${{ github.event.inputs.use_test_data == 'true' }}
+      if: ${{ github.event.inputs.use_test_data != 'false' }}
       run: |
         echo "📊 Generating synthetic test data for CI training..."
         docker exec -i bike_demand_postgres psql -U postgres -d bike_demand_db << 'SQL'
